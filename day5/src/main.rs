@@ -1,12 +1,27 @@
 fn main() {
     let input = std::fs::read_to_string("input.txt").unwrap();
 
-    parse_input(&input)
+    let data = parse_input(&input);
+    part1(data)
 }
 
 struct Data {
     stacks: Vec<Vec<char>>,
     moves: Vec<[usize; 3]>,
+}
+
+fn part1(data: Data) {
+    let mut stacks = data.stacks;
+    println!("{:?}", stacks);
+    for [m, start, end] in data.moves {
+        println!("Move: {}, Start: {}, end: {}", m, start, end);
+        println!("Stacks: {:?}", stacks);
+        for _ in 0..m {
+            let grabbed = stacks[start - 1].pop().unwrap();
+            stacks[end - 1].push(grabbed);
+        }
+    }
+    println!("New Stacks: {:?}", stacks)
 }
 
 fn parse_input(input: &String) -> Data {
