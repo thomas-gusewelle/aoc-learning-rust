@@ -2,18 +2,24 @@ fn main() {
     let input = std::fs::read_to_string("input.txt").unwrap();
 
     let data = parse_input(&input);
-    part1(data)
+    println!(
+        " Part 1: {:?}",
+        part1(&data).into_iter().collect::<String>()
+    );
+    println!(
+        " Part 2: {:?}",
+        part2(&data).into_iter().collect::<String>()
+    );
 }
-
 struct Data {
     stacks: Vec<Vec<char>>,
     moves: Vec<[usize; 3]>,
 }
 
-fn part1(data: Data) {
-    let mut stacks = data.stacks;
+fn part1(data: &Data) -> Vec<char> {
+    let mut stacks = data.stacks.clone();
     println!("{:?}", stacks);
-    for [m, start, end] in data.moves {
+    for [m, start, end] in data.moves.clone() {
         println!("Move: {}, Start: {}, end: {}", m, start, end);
         println!("Stacks: {:?}", stacks);
         for _ in 0..m {
@@ -21,7 +27,27 @@ fn part1(data: Data) {
             stacks[end - 1].push(grabbed);
         }
     }
-    println!("New Stacks: {:?}", stacks)
+    println!("New Stacks: {:?}", stacks);
+    stacks
+        .into_iter()
+        .map(|v| *v.last().unwrap_or(&' '))
+        .collect()
+}
+
+fn part2(data: &Data) -> Vec<char> {
+    let mut stacks = data.stacks.clone();
+    for [m, start, end] in data.moves.clone() {
+        let mut grabbed = vec![];
+        for _ in 0..m {
+            grabbed.push(stacks[start - 1].pop().unwrap());
+        }
+        grabbed.reverse();
+        grabbed.into_iter().for_each(|v| stacks[end - 1].push(v));
+    }
+    stacks
+        .into_iter()
+        .map(|v| *v.last().unwrap_or(&' '))
+        .collect()
 }
 
 fn parse_input(input: &String) -> Data {
