@@ -4,5 +4,8 @@ fn main() {
 }
 
 fn parse_input(input: &String) {
-    input.into_iter().map(|v| {})
+    print!("{:?}", input);
+    for char in input.chars() {
+        print!("{:?}", char);
+    }
 }
