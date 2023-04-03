@@ -28,8 +28,12 @@ impl Dir {
         }
     }
 
-    fn find_path(&mut self, path: &[String]) -> &mut self {
+    fn find_path(&mut self, path: &[Dir]) -> &mut Self {
         let mut current = self;
+        for entry in path {
+            current = current.dirs.iter_mut().find(|f| f.name == *entry.name).unwrap();
+        }
+        current
     }
 }
 
@@ -50,12 +54,10 @@ fn part1(input: &String) {
                     continue;
                 }
                 _ => {}
-            }
+             }
         } else {
             match parts[0] {
                 "dir" => {
-                    let dir = *current_dir;
-                    dir.dirs.push(Dir::new(parts[1]));
                     continue;
                 }
                 "$" => {} //$ ls
