@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::rc::Rc;
 fn main() {
     println!("{:?}", part1(&parse_input()))
 }
@@ -9,32 +12,41 @@ fn parse_input() -> String {
 // go through and find cds
 // calc size of directories
 //
-#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+#[derive(Default, Debug)]
 struct Dir {
-    // parent: Dir,
-    name: String,
-    size: usize,
-    files: Vec<File>,
-    dirs: Vec<Dir>,
+    parent: Option<Rc<Dir>>,
+    size: RefCell<usize>,
+    files: RefCell<Vec<File>>,
+    dirs: RefCell<HashMap<String, Rc<Dir>>>,
 }
 
 impl Dir {
-    fn new(name: &str) -> Self {
-        Self {
-            name: name.to_string(),
-            size: 0,
-            files: Vec::new(),
-            dirs: Vec::new(),
-        }
+    // fn new(name: &str, parent_dir: Option<Rc<Dir>>) -> Self {
+    //     Self {
+    //         parent: parent_dir,
+    //         name: name.to_string(),
+    //         size: 0,
+    //         files: Vec::new(),
+    //         dirs: Vec::new(),
+    //     }
+    // }
+    fn new() -> Self {
+        Self::default()
     }
 
-    fn find_parent(&mut self, path: &[String]) -> &mut Self {
-        let mut current = self;
-        for entry in path {
-            current = current.dirs.iter_mut().find(|f| f.name == *entry).unwrap();
-        }
-        current
-    }
+    // fn find_parent(&mut self, path: &[String]) -> &mut Self {
+    //     let mut current = self;
+    //     for entry in path {
+    //         current = current.dirs.iter_mut().find(|f| f.name == *entry).unwrap();
+    //     }
+    //     current
+    // }
+    //
+    // fn calc_dir_sizes(fs: &Dir) -> usize {
+    //     let mut size = 0;
+    //     size += fs.files.iter().map(|s| s.size).sum::<usize>();
+    //     size
+    // }
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -53,22 +65,29 @@ impl File {
 }
 
 fn part1(input: &String) {
-    let mut fs = Dir::new("fs");
-    let mut path_names: Vec<String> = Vec::new(); // keeps track of the order of dirs
+    let fs = Rc::new(Dir::new());
+    // let mut path_names: Vec<String> = Vec::new();
+    let mut current_dir = Rc::clone(&fs);
+    // let mut sizes: Vec<usize> = Vec::new();
+    // keeps track of the order of dirs
     for line in input.lines() {
         let parts = line.split_whitespace().collect::<Vec<_>>();
         if parts[..2] == ["$", "cd"] {
             match parts[2] {
+                // root
                 "/" => {
                     continue;
                 }
+                // up dir
                 ".." => {
-                    // current_dir = parent_dir;
-                    path_names.pop().unwrap();
+                    current_dir = Rc::clone(&current_dir.parent.as_ref().unwrap());
+                    // path_names.pop().unwrap();
                     continue;
                 }
-                _ => {
-                    path_names.push(parts[2].to_owned());
+                // cd into dir
+                dir_name => {
+                    let move_dir = current_dir.dirs.borrow().get(dir_name).unwrap().clone();
+                    current_dir = move_dir;
                 }
             }
         }
@@ -78,14 +97,24 @@ fn part1(input: &String) {
 
         if parts[0] == "dir" {
             // make new dir
-            let new_dir = Dir::new(parts[1]);
-            let parent = fs.find_parent(&path_names);
-            parent.dirs.push(new_dir);
+            let name = parts[1];
+            let new_dir = Rc::new(Dir {
+                parent: Some(Rc::clone(&current_dir)),
+                size: RefCell::new(0),
+                files: RefCell::new(vec![]),
+                dirs: RefCell::new(HashMap::new()),
+            });
+            current_dir
+                .dirs
+                .borrow_mut()
+                .insert(name.to_string(), new_dir);
             continue;
         }
         if let Ok(i) = parts[0].parse::<usize>() {
             let new_file = File::new(parts[1], i);
-            fs.find_parent(&path_names).files.push(new_file)
+            *current_dir.size.borrow_mut() += i;
+            current_dir.files.borrow_mut().push(new_file)
         }
     }
+    println!("{:?}", fs)
 }
